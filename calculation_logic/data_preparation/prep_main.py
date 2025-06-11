@@ -47,3 +47,16 @@ def find_path(add_to_dir):
     current_path = os.getcwd()
 
     return current_path + add_to_dir
+
+##Test if works
+# Daily data laden
+# daily_df = load_term_structures(find_path('/data/daily/'), 'daily-term-structure-spot-interest-rate-R*XX.csv', 'daily')
+
+# # Monthly data laden
+# monthly_df = load_term_structures(find_path('/data/monthly/'), 'monthly-term-structure-spot-interest-rate-R*XX.csv', 'monthly')
+
+# print("Daily data sample:")
+# print(daily_df.head() if daily_df is not None else "No daily data loaded")
+
+# print("\nMonthly data sample:")
+# print(monthly_df.head() if monthly_df is not None else "No monthly data loaded")
