@@ -1,15 +1,7 @@
 import pandas as pd
-import glob
-import re
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
-from statsmodels.tsa.stattools import adfuller
-import shutil
-import os
-from sklearn.decomposition import PCA
-from IPython.display import display
 
 def create_term_structure_plot(df, path_to_store_results, tag, file_identifier):
     df['years'] = pd.to_datetime(df['years'], errors='coerce')
@@ -70,13 +62,33 @@ def create_correlation_heatmap_annotated(df, path_to_store_results, title, tag):
 
     return corr
 
-# Plot en sla de correlatiematrices op
-daily_corr = create_correlation_heatmap_annotated(daily_df, path_to_store_results, 'Correlation Heatmap for different maturities - Daily Data', 'daily')
-monthly_corr = create_correlation_heatmap_annotated(monthly_df, path_to_store_results, 'Correlation Heatmap for different maturities - Monthly Data', 'monthly')
+def analyse_missing_data(daily_df, monthly_df, path_to_store_results):
+    # Voeg 'year' toe aan daily_df en monthly_df
+    daily_df['year'] = daily_df['years'].dt.year
+    monthly_df['year'] = monthly_df['years'].dt.year
 
-# Toon de correlatiematrices als tabel
-print("Correlation matrix - Daily Data:")
-print(daily_corr.round(3))
+    # Groepeer per jaar en bereken % missing per maturiteit (kolom)
+    missing_per_year_daily = daily_df.groupby('year').apply(lambda x: x.isna().mean() * 100)
+    missing_per_year_monthly = monthly_df.groupby('year').apply(lambda x: x.isna().mean() * 100)
 
-print("\nCorrelation matrix - Monthly Data:")
-print(monthly_corr.round(3))
+    # Gemiddelde % missing over alle looptijden per jaar
+    avg_missing_per_year_daily = missing_per_year_daily.mean(axis=1)
+    avg_missing_per_year_monthly = missing_per_year_monthly.mean(axis=1)
+
+    print("\nAverage missing % per year - Daily:")
+    print(avg_missing_per_year_daily)
+
+    print("\nAverage missing % per year - Monthly:")
+    print(avg_missing_per_year_monthly)
+
+    avg_missing_per_year_daily.plot(kind='bar', figsize=(10,5))
+    plt.ylabel('Average % Missing')
+    plt.title('Average Missing Data % per Year - Daily Data')
+    plt.savefig(f'{path_to_store_results}/missing_data_daily.png')
+    plt.close()
+
+    avg_missing_per_year_monthly.plot(kind='bar', figsize=(10,5))
+    plt.ylabel('Average % Missing')
+    plt.title('Average Missing Data % per Year - Monthly Data')
+    plt.savefig(f'{path_to_store_results}/missing_data_monthly.png')
+    plt.close()

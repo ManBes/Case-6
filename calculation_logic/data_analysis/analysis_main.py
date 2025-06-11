@@ -1,18 +1,7 @@
-#IMPORT LIABARIES
-import pandas as pd
-import glob
-import re
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import seaborn as sns
-from statsmodels.tsa.stattools import adfuller
-import shutil
 import os
-from sklearn.decomposition import PCA
-from IPython.display import display
+import shutil
 
-from data_analysis import descriptive_stats, create_plots
+from data_analysis import descriptive_stats, create_plots, test_stationarity
 
 def perform_data_analysis(df_day, df_month, path_to_store_results):
     clear_folder_contents(path_to_store_results)
@@ -37,6 +26,16 @@ def perform_data_analysis(df_day, df_month, path_to_store_results):
 
     print(daily_corr.round(3))
     print(monthly_corr.round(3))
+
+    #Test for stationarity
+    daily_adf_results = test_stationarity.adf_test_all_to_table(df_day, 'daily', path_to_store_results)
+    monthly_adf_results = test_stationarity.adf_test_all_to_table(df_month, 'monthly', path_to_store_results)
+
+    print(daily_adf_results)
+    print(monthly_adf_results)
+
+    #Analyse missing data
+    create_plots.analyse_missing_data(df_day, df_month, path_to_store_results)
 
 def clear_folder_contents(path_to_store_results):
     shutil.rmtree(path_to_store_results, ignore_errors=True)

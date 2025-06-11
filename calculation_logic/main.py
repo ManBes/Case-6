@@ -6,7 +6,7 @@ from data_analysis import analysis_main as am
 daily_df = pr.load_term_structures(pr.find_path('/data/daily/'), 'daily-term-structure-spot-interest-rate-R*XX.csv', 'daily')
 monthly_df = pr.load_term_structures(pr.find_path('/data/monthly/'), 'monthly-term-structure-spot-interest-rate-R*XX.csv', 'monthly')
 
-# data_analysis: uitvoeren data analyse. Opslaan van output in data/output_analysis
+# data_analysis: uitvoeren data analyse. Opslaan van output in data/output_analysis. Het is mogelijk om script te draaien zonder analyse opnieuw uit te voeren
 am.perform_data_analysis(daily_df, monthly_df, pr.find_path('/data/output_analysis'))
 
 
