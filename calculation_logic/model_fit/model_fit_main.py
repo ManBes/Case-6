@@ -14,13 +14,13 @@ def activate_model_calibration(df, maturities, dates, yields):
     output_params = list() #will contain beta0_opt, beta1_opt, beta2_opt, tau1_opt
     
     # Setup data
-    tasks = [(yields[i], maturities) for i in range(len(dates))]
+    tasks = [(yields[i], maturities, dates[i]) for i in range(len(dates))]
 
     # Parallel execution
     with concurrent.futures.ProcessPoolExecutor() as executor:  # Adjust number of processes as needed
         output_dates, output_convergence, output_params = zip(*executor.map(activate_optimization_single_timestep, tasks))
 
-    return output_dates, output_params
+    return output_dates, output_convergence, output_params
 
 # market_maturities = np.array([1/12, 3/12, 6/12, 1, 2, 3, 5, 7, 10, 20, 30])
 # dates_index = pd.to_datetime(['2025-04-02'])
@@ -29,7 +29,7 @@ def activate_model_calibration(df, maturities, dates, yields):
 
 
 def activate_optimization_single_timestep(args):
-    market_maturities, calibration_date, market_yields_on_date = args
+    market_maturities, market_yields_on_date, calibration_date = args
 
     # Define initial guesses for the parameters [beta0, beta1, beta2, tau1]
     # Sensible starting points:
@@ -64,7 +64,7 @@ def activate_optimization_single_timestep(args):
 
     # Extract the optimized parameters --> TODO: wegschrijven naar een dataframe of er succes is en wat params zijn
     if optimization_result.success:
-        beta0_opt, beta1_opt, beta2_opt, tau1_opt = optimization_result.x
+        param_results = optimization_result.x
         # print(f"\n--- Nelson-Siegel Calibration Results ({calibration_date.strftime('%Y-%m-%d')}) ---")
         # print(f"Optimization Successful: {optimization_result.success}")
         # print(f"Optimized Parameters:")
@@ -75,9 +75,9 @@ def activate_optimization_single_timestep(args):
     else:
         print(f"\n--- Nelson-Siegel Calibration Failed ({calibration_date.strftime('%Y-%m-%d')}) ---")
         print(f"Optimization Message: {optimization_result.message}")
-        beta0_opt, beta1_opt, beta2_opt, tau1_opt = initial_guesses # Fallback to initial guesses for plotting
+        param_results = initial_guesses # Fallback to initial guesses for plotting
 
-    return calibration_date.strftime('%Y-%m-%d'), optimization_result.success, beta0_opt, beta1_opt, beta2_opt, tau1_opt
+    return calibration_date.strftime('%Y-%m-%d'), optimization_result.success, param_results
 
 
 # # Calculate the fitted yield curve using the optimized parameters
