@@ -3,6 +3,7 @@ import numpy as np
 
 #Select rows that contain no NA values, 
 #Return the adjusted object, an array of maturities (n), an array of dates (m), and an array of yields (nxm)
+# todo: uitfilteren correcte jaren
 def adjust_df(df):
     # Step 1: Drop rows with any NaN values
     df_new = df.dropna()
