@@ -1,8 +1,8 @@
 eerst zelf een environment aanmaken met 
-python3 -m venv .venv
+python3 -m venv venv
 
 Om de environment aan de praat te krijgen run in terminal (Terminal > New terminal):
-venv\Scripts\activate of source .venv\Scripts\activate
+venv\Scripts\activate of source venv\Scripts\activate
 
 deactiveren met deactive
 
