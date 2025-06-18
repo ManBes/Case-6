@@ -2,6 +2,7 @@ from data_preparation import prep_main as pr
 from data_analysis import analysis_main as am
 from data_adjustment import adjust 
 from model_fit import model_fit_main as mf
+from model_fit import assess_fit as af
 
 if __name__ == '__main__':
     # #vanuit hier functies aanroepen in volgorde:
@@ -19,9 +20,9 @@ if __name__ == '__main__':
     output_grid, output_flex  = mf.activate_model_calibration(maturities, dates, yields)
 
     # assess flex
-    
+    af.assess_flexible_tau(output_flex, pr.find_path('/data/output_analysis'))
 
     # assess grid and choose tau based on lowest total sum of squared residual
+    af.assess_fixed_tau(output_grid, pr.find_path('/data/output_analysis'))
 
-    # write away chosen time series and time series for sensitivities
 

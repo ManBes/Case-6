@@ -1,18 +1,9 @@
-#https://thepythonlab.medium.com/advanced-yield-curve-modeling-in-python-implementing-nelson-siegel-and-svensson-models-ad8112c7d433
-
-import scipy.optimize as optimize
 import concurrent.futures
-import matplotlib.pyplot as plt # Ensure matplotlib is imported if not already
 import numpy as np 
-import pandas as pd 
 
 #https://nelson-siegel-svensson.readthedocs.io/en/latest/readme.html#calibration
 import nelson_siegel_svensson.calibrate as ns
 
-# from model_fit import nelson_siegel as ns #kan eruit?
-
-#todos: grid van taus maken en voor elke tau en elke tijdstap optimalisatie doen en gegevens (ss_res, betas, tau, tijdstip) wegschrijven
-# voor elke tijdstap optimalisatie doen met optimaliseren tau erbij en gegevens wegschrijven (ssres, betas,tau,tijdstip)
 
 def activate_model_calibration(maturities, dates, yields):
     output_grid = list()
