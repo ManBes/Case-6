@@ -6,19 +6,38 @@ import matplotlib.pyplot as plt # Ensure matplotlib is imported if not already
 import numpy as np 
 import pandas as pd 
 
-from model_fit import nelson_siegel as ns
+#https://nelson-siegel-svensson.readthedocs.io/en/latest/readme.html#calibration
+import nelson_siegel_svensson.calibrate as ns
+
+# from model_fit import nelson_siegel as ns #kan eruit?
+
+#todos: grid van taus maken en voor elke tau en elke tijdstap optimalisatie doen en gegevens (ss_res, betas, tau, tijdstip) wegschrijven
+# voor elke tijdstap optimalisatie doen met optimaliseren tau erbij en gegevens wegschrijven (ssres, betas,tau,tijdstip)
 
 def activate_model_calibration(df, maturities, dates, yields):
     output_dates = list()
     output_convergence = list()
     output_params = list() #will contain beta0_opt, beta1_opt, beta2_opt, tau1_opt
     
-    # Setup data
-    tasks = [(yields[i], maturities, dates[i]) for i in range(len(dates))]
+    # # Setup data
+    # tasks = [(yields[i], maturities, dates[i]) for i in range(len(dates))]
 
-    # Parallel execution
-    with concurrent.futures.ProcessPoolExecutor() as executor:  # Adjust number of processes as needed
-        output_dates, output_convergence, output_params = zip(*executor.map(activate_optimization_single_timestep, tasks))
+    # # Parallel execution
+    # with concurrent.futures.ProcessPoolExecutor() as executor:  # Adjust number of processes as needed
+    #     output_dates, output_convergence, output_params = zip(*executor.map(activate_optimization_single_timestep, tasks))
+
+    tau_value = 1.0
+    #doet ook tau optimaliseren
+    curve, status = ns.calibrate_ns_ols(maturities, yields[1], tau0=1.0)  # starting value of 1.0 for the optimization of tau
+    print(curve)
+    #doet tau fixeren
+    curve2, res = ns.betas_ns_ols(tau_value, maturities, yields[1])
+    sum_square_error = ns.errorfn_ns_ols(tau_value, maturities, yields[1])
+    assert status.success
+    print(curve2)
+    print(sum_square_error)
+    
+    curve.beta0, curve.beta1, curve.beta2, curve.tau,
 
     return output_dates, output_convergence, output_params
 
@@ -28,56 +47,56 @@ def activate_model_calibration(df, maturities, dates, yields):
 # yield_curve_data = pd.DataFrame(sample_yields, index=dates_index, columns=[f'{m*12:.0f}M' if m<1 else f'{m:.0f}Y' for m in market_maturities])
 
 
-def activate_optimization_single_timestep(args):
-    market_maturities, market_yields_on_date, calibration_date = args
+# def activate_optimization_single_timestep(args):
+#     market_maturities, market_yields_on_date, calibration_date = args
 
-    # Define initial guesses for the parameters [beta0, beta1, beta2, tau1]
-    # Sensible starting points:
-    # beta0: long-term yield (e.g., yield at 30Y)
-    # beta1: short-term - long-term spread (e.g., 3M yield - 30Y yield)
-    # beta2: often starts around 0, related to hump shape
-    # tau1: decay factor, often around 1-2 years
-    initial_beta0 = market_yields_on_date[-1] # Longest maturity yield
-    initial_beta1 = market_yields_on_date[0] - market_yields_on_date[-1] # Short-Long spread
-    initial_beta2 = 0.0 # Start with no curvature
-    initial_tau1 = 1.5 # Common starting point for tau1
-    initial_guesses = [initial_beta0, initial_beta1, initial_beta2, initial_tau1]
+#     # Define initial guesses for the parameters [beta0, beta1, beta2, tau1]
+#     # Sensible starting points:
+#     # beta0: long-term yield (e.g., yield at 30Y)
+#     # beta1: short-term - long-term spread (e.g., 3M yield - 30Y yield)
+#     # beta2: often starts around 0, related to hump shape
+#     # tau1: decay factor, often around 1-2 years
+#     initial_beta0 = market_yields_on_date[-1] # Longest maturity yield
+#     initial_beta1 = market_yields_on_date[0] - market_yields_on_date[-1] # Short-Long spread
+#     initial_beta2 = 0.0 # Start with no curvature
+#     initial_tau1 = 1.5 # Common starting point for tau1
+#     initial_guesses = [initial_beta0, initial_beta1, initial_beta2, initial_tau1]
 
-    # Define parameter bounds (beta0, beta1, beta2 can be negative, tau1 must be positive)
-    # Bounds can help optimization convergence and ensure economic sense.
-    bounds = [
-        (0, 0.2),     # beta0: Level (e.g., 0% to 20% yield)
-        (-0.1, 0.1),   # beta1: Slope (can be positive or negative)
-        (-0.2, 0.2),   # beta2: Curvature (can be positive or negative)
-        (1e-3, 50)    # tau1: Decay (must be positive, reasonable upper limit)
-    ]
+#     # Define parameter bounds (beta0, beta1, beta2 can be negative, tau1 must be positive)
+#     # Bounds can help optimization convergence and ensure economic sense.
+#     bounds = [
+#         (0, 0.2),     # beta0: Level (e.g., 0% to 20% yield)
+#         (-0.1, 0.1),   # beta1: Slope (can be positive or negative)
+#         (-0.2, 0.2),   # beta2: Curvature (can be positive or negative)
+#         (1e-3, 50)    # tau1: Decay (must be positive, reasonable upper limit)
+#     ]
 
-    # Perform the optimization using scipy.optimize.minimize
-    # 'L-BFGS-B' is a common choice that handles bounds
-    optimization_result = optimize.minimize(
-        ns.sse_objective,
-        initial_guesses,
-        args=(market_maturities, market_yields_on_date),
-        method='L-BFGS-B',
-        bounds=bounds
-    )
+#     # Perform the optimization using scipy.optimize.minimize
+#     # 'L-BFGS-B' is a common choice that handles bounds
+#     optimization_result = optimize.minimize(
+#         ns.sse_objective,
+#         initial_guesses,
+#         args=(market_maturities, market_yields_on_date),
+#         method='L-BFGS-B',
+#         bounds=bounds
+#     )
 
-    # Extract the optimized parameters --> TODO: wegschrijven naar een dataframe of er succes is en wat params zijn
-    if optimization_result.success:
-        param_results = optimization_result.x
-        # print(f"\n--- Nelson-Siegel Calibration Results ({calibration_date.strftime('%Y-%m-%d')}) ---")
-        # print(f"Optimization Successful: {optimization_result.success}")
-        # print(f"Optimized Parameters:")
-        # print(f"  beta0: {beta0_opt:.6f}")
-        # print(f"  beta1: {beta1_opt:.6f}")
-        # print(f"  beta2: {beta2_opt:.6f}")
-        # print(f"  tau1:  {tau1_opt:.6f}")
-    else:
-        print(f"\n--- Nelson-Siegel Calibration Failed ({calibration_date.strftime('%Y-%m-%d')}) ---")
-        print(f"Optimization Message: {optimization_result.message}")
-        param_results = initial_guesses # Fallback to initial guesses for plotting
+#     # Extract the optimized parameters --> TODO: wegschrijven naar een dataframe of er succes is en wat params zijn
+#     if optimization_result.success:
+#         param_results = optimization_result.x
+#         # print(f"\n--- Nelson-Siegel Calibration Results ({calibration_date.strftime('%Y-%m-%d')}) ---")
+#         # print(f"Optimization Successful: {optimization_result.success}")
+#         # print(f"Optimized Parameters:")
+#         # print(f"  beta0: {beta0_opt:.6f}")
+#         # print(f"  beta1: {beta1_opt:.6f}")
+#         # print(f"  beta2: {beta2_opt:.6f}")
+#         # print(f"  tau1:  {tau1_opt:.6f}")
+#     else:
+#         print(f"\n--- Nelson-Siegel Calibration Failed ({calibration_date.strftime('%Y-%m-%d')}) ---")
+#         print(f"Optimization Message: {optimization_result.message}")
+#         param_results = initial_guesses # Fallback to initial guesses for plotting
 
-    return calibration_date.strftime('%Y-%m-%d'), optimization_result.success, param_results
+#     return calibration_date.strftime('%Y-%m-%d'), optimization_result.success, param_results
 
 
 # # Calculate the fitted yield curve using the optimized parameters
