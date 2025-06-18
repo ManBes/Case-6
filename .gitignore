@@ -200,3 +200,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+calculation_logic/model_fit/__pycache__/model_fit_main.cpython-312.pyc
